@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include "CLI11.hpp"
 #include "TiqiaaUsb.h"
 #include "ctqirsignal.h"
 
@@ -17,27 +18,39 @@ void irRecvCallback(uint8_t *data, int size, class TiqiaaUsbIr *IrCls,
 }
 
 int main(int argc, char **argv) {
+  CLI::App app{"Tiqiaa USB - cli"};
+
+  uint16_t receiveNec = 0;
+  app.add_option("-r,--receiveNec", receiveNec,
+                 "Receive a NEC code (hexadecimal)");
+
+  uint16_t sendNec = 0;
+  CLI::Option *sendNecOpt = app.add_option(
+      "-s,--send", sendNec, "Send a NEC code (hexadecimal), e.g.: 0x8002");
+
+  CLI11_PARSE(app, argc, argv);
+
   TiqiaaUsbIr Ir;
   Ir.IrRecvCallback = &irRecvCallback;
 
   if (!Ir.Open()) {
-    std::cerr << "Could not open the device." << std::endl;
+    std::cout << "Could not open the device." << std::endl;
     return 1;
   }
 
-  std::cout << "Sending..." << std::endl;
-  uint16_t code1 = 0x8002;
-  uint16_t code2 = 0x8004;
-  uint16_t code3 = 0x8006;
+  if (*sendNecOpt) {
+    std::cerr << "Sending..." << std::endl;
 
-  if (Ir.SendNecSignal(0x8002)) {
-    printf("Send good\n");
-  } else {
-    printf("Send bad\n");
+    if (Ir.SendNecSignal(0x8002)) {
+      std::cout << "Sent code successfully" << std::endl;
+    } else {
+      std::cout << "Send failure" << std::endl;
+    }
+
+    std::cerr << "Sent." << std::endl;
   }
 
-  std::cout << "Sent." << std::endl;
-
   Ir.Close();
+
   return 0;
 }
