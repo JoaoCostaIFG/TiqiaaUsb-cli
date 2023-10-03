@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   if (*sendNecOpt) {
     std::cerr << "Sending..." << std::endl;
 
-    if (Ir.SendNecSignal(0x8002)) {
+    if (Ir.SendNecSignal(sendNec)) {
       std::cout << "Sent code successfully" << std::endl;
     } else {
       std::cout << "Send failure" << std::endl;
