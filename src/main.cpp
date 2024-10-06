@@ -1,7 +1,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
-#include <vector>
+#include <ostream>
+#include <thread>
 
 #include "CLI11.hpp"
 #include "TiqiaaUsb.h"
@@ -12,8 +13,9 @@ static CTqIrSignal signal;
 
 void irRecvCallback(uint8_t *data, int size, class TiqiaaUsbIr *IrCls,
                     void *context) {
-  std::cout << "Size: " << size << std::endl;
-  signal.FromTiqiaa(data, size);
+  std::cout << "Data: " << (unsigned) *data << " Size: " << size << std::endl;
+  std::cout << "Tiqiaa: " << signal.FromTiqiaa(data, size) << std::endl;
+  std::cout << "Data: " << (unsigned) *data << " Size: " << size << std::endl;
   waiting = false;
 }
 
@@ -21,8 +23,8 @@ int main(int argc, char **argv) {
   CLI::App app{"Tiqiaa USB - cli"};
 
   uint16_t receiveNec = 0;
-  app.add_option("-r,--receiveNec", receiveNec,
-                 "Receive a NEC code (hexadecimal)");
+  CLI::Option *receiveNecOpt = app.add_option(
+      "-r,--receiveNec", receiveNec, "Receive a NEC code (hexadecimal)");
 
   uint16_t sendNec = 0;
   CLI::Option *sendNecOpt = app.add_option(
@@ -48,6 +50,15 @@ int main(int argc, char **argv) {
     }
 
     std::cerr << "Sent." << std::endl;
+  }
+
+  if (*receiveNecOpt) {
+    std::cerr << "Receiving..." << std::endl;
+    waiting = true;
+    Ir.StartRecvIR();
+    while (waiting) {
+      std::this_thread::yield();
+    }
   }
 
   Ir.Close();
